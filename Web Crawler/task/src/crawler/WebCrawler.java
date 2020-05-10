@@ -106,7 +106,7 @@ public class WebCrawler extends JFrame {
 
                 URL url1 = new URL(url2.getProtocol()+"://"+url2.getHost()+":"+url2.getPort()+"/"+link);
                     try{
-                        if (url1.openConnection().getContentType().equals("text/html")){
+                        if (url1.openConnection().getContentType()!=null&&url1.openConnection().getContentType().equals("text/html")){
                         InputStream linkInputStream = url1.openStream();
                         final BufferedReader linkreader = new BufferedReader(new InputStreamReader(linkInputStream, StandardCharsets.UTF_8));
                         final StringBuilder linkstringBuilder = new StringBuilder();
