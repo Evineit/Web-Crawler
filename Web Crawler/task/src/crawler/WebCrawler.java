@@ -5,10 +5,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.ConnectException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +19,10 @@ public class WebCrawler extends JFrame {
     JPanel topPanel = new JPanel();
     JPanel urlPanel = new JPanel();
     JPanel iTopPanel = new JPanel();
+    JPanel exportPanel = new JPanel();
+    JButton exportButton = new JButton("Export");
     JTextArea textArea = new JTextArea();
+    JTextField textFieldExport;
     JTextField textFieldURL;
     JButton buttonDownload;
     JLabel labelTitle;
@@ -36,6 +36,7 @@ public class WebCrawler extends JFrame {
 //        setContentPane(mainPanel);
         buttonDownload = new JButton("Get text!");
         textFieldURL = new JTextField();
+        textFieldExport = new JTextField();
         labelTitle = new JLabel("Title:");
 //        table.addColumn(new TableColumn());
 //        table.
@@ -44,21 +45,26 @@ public class WebCrawler extends JFrame {
         mainPanel.setLayout(new BorderLayout());
         iTopPanel.setLayout(new BoxLayout(iTopPanel,BoxLayout.X_AXIS));
         urlPanel.setLayout(new BoxLayout(urlPanel,BoxLayout.X_AXIS));
-
+        exportPanel.setLayout(new BoxLayout(exportPanel,BoxLayout.Y_AXIS));
         labelTitle.setName("TitleLabel");
 //        textArea.setName("HtmlTextArea");
         table.setName("TitlesTable");
         buttonDownload.setName("RunButton");
         textFieldURL.setName("UrlTextField");
         textArea.setText("HTML code?");
+        textFieldExport.setName("ExportUrlTextField");
+        exportButton.setName("ExportButton");
         table.setEnabled(false);
         topPanel.add(urlPanel);
         topPanel.add(iTopPanel);
         urlPanel.add(textFieldURL);
         urlPanel.add(buttonDownload);
         iTopPanel.add(labelTitle);
+        exportPanel.add(textFieldExport);
+        exportPanel.add(exportButton);
         add(topPanel,BorderLayout.NORTH);
         add(scrollPane,BorderLayout.CENTER);
+        add(exportPanel,BorderLayout.SOUTH);
         buttonDownload.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -68,9 +74,29 @@ public class WebCrawler extends JFrame {
                 repaint();
             }
         });
+        exportButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                export();
+            }
+        });
         setVisible(true);
 
     }
+
+    private void export() {
+        File file = new File(textFieldExport.getText());
+        try (PrintWriter printWriter = new PrintWriter(file)) {
+            for (int i = 0; i < table.getRowCount(); i++) {
+                printWriter.println(table.getValueAt(i,0));
+                printWriter.println(table.getValueAt(i,1));
+            }
+        } catch (IOException e) {
+            System.out.printf("An exception occurs %s", e.getMessage());
+        }
+
+    }
+
     void downloadSource(){
         model = new DefaultTableModel(new String[0][0],new String[]{"Url","Titles"});
         table.setModel(model);
@@ -79,6 +105,7 @@ public class WebCrawler extends JFrame {
         final InputStream inputStream;
         try {
             URL url2 = new URL(url);
+            url2.openConnection().setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0");
             inputStream = url2.openStream();
             final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             final StringBuilder stringBuilder = new StringBuilder();
