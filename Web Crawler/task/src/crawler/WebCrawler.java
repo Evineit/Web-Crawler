@@ -3,6 +3,8 @@ package crawler;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
@@ -22,7 +24,7 @@ public class WebCrawler extends JFrame {
     JLabel parsedLabel;
     JLabel exportLabel;
     JTextField textFieldURL;
-    JToggleButton buttonDownload;
+    JToggleButton buttonRun;
     JTextField workField;
     JTextField depthField;
     JCheckBox depthCBox;
@@ -44,79 +46,10 @@ public class WebCrawler extends JFrame {
         super("Web crawler");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(600, 260);
-//        setLayout(null);
         setContentPane(mainPanel);
-        buttonDownload = new JToggleButton("Run");
-        textFieldURL = new JTextField();
-        textFieldExport = new JTextField();
-        startLabel = new JLabel("Start Url");
-        workLabel = new JLabel("Workers");
-        maxDepthLabel = new JLabel("Maximum depth");
-        timeLimitLabel = new JLabel("Time limit");
-        timeElapsedLabel = new JLabel("Elapsed time:");
-        parsedLabel = new JLabel("Parsed pages:");
-        exportLabel = new JLabel("Export");
-        workField = new JTextField("5");
-        depthField = new JTextField("1");
-        depthCBox = new JCheckBox("Enabled",true);
-        timeLimitField = new JTextField("120");
-        timeCBox = new JCheckBox("Enabled");
-        currentTimeLabel = new JLabel("0");
-        parsedPagesLabel = new JLabel("0");
-
-        mainPanel.setLayout(gridBagLayout);
-        addMainPanel(startLabel, 0, 1, 0);
-        addMainPanel(textFieldURL, 0, 1, 1);
-        addMainPanel(buttonDownload, 0, 1, 0);
-        addMainPanel(workLabel, 1, 1, 0);
-        addMainPanel(workField, 1, GridBagConstraints.REMAINDER, 1);
-        addMainPanel(maxDepthLabel, 2, 1, 0);
-        addMainPanel(depthField, 2, 1, 1);
-        addMainPanel(depthCBox, 2, 1, 0);
-        addMainPanel(timeLimitLabel, 3, 1, 0);
-        addMainPanel(timeLimitField, 3, 1, 1);
-        addMainPanel(timeCBox, 3, 1, 0);
-        addMainPanel(timeElapsedLabel, 4, 1, 0);
-        addMainPanel(currentTimeLabel, 4, 1, 0);
-        addMainPanel(parsedLabel, 5, 1, 0);
-        addMainPanel(parsedPagesLabel, 5, 1, 0);
-        addMainPanel(exportLabel, 6, 1, 0);
-        addMainPanel(textFieldExport, 6, 1, 1);
-        addMainPanel(exportButton, 6, 1, 0);
-
-        textFieldURL.setName("UrlTextField");
-        buttonDownload.setName("RunButton");
-        depthField.setName("DepthTextField");
-        depthCBox.setName("DepthCheckBox");
-        parsedPagesLabel.setName("ParsedLabel");
-        textFieldExport.setName("ExportUrlTextField");
-        exportButton.setName("ExportButton");
-        table.setEnabled(false);
-        buttonDownload.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                parsedPagesLabel.setText("0");
-                model = new DefaultTableModel(new String[0][0], new String[]{"Url", "Titles"});
-                table.setModel(model);
-                Thread crawl = new Thread(() -> downloadSource(textFieldURL.getText(),Integer.parseInt(depthField.getText())));
-                crawl.start();
-                try {
-                    crawl.join();
-                } catch (InterruptedException interruptedException) {
-                    interruptedException.printStackTrace();
-                }
-                table.setModel(model);
-                revalidate();
-                repaint();
-            }
-        });
-        exportButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                export();
-            }
-        });
+        initComponents();
         setVisible(true);
+        setLocationRelativeTo(null);
 
     }
 
@@ -158,8 +91,7 @@ public class WebCrawler extends JFrame {
             }
             Pattern pattern = Pattern.compile("<title>(.*)</title>");
             Matcher matcherTitle = pattern.matcher(stringBuilder.toString());
-            matcherTitle.find();
-            String titleGroup = matcherTitle.group(1);
+            String titleGroup = (matcherTitle.find()) ? matcherTitle.group(1) : null;
             boolean exist=false;
             for (int i = 0; i < table.getRowCount(); i++) {
                 if (table.getValueAt(i,0).equals(url)){
@@ -191,5 +123,83 @@ public class WebCrawler extends JFrame {
         }
 
 
+    }
+    private void initComponents(){
+        buttonRun = new JToggleButton("Run");
+        textFieldURL = new JTextField();
+        textFieldExport = new JTextField();
+        startLabel = new JLabel("Start Url");
+        workLabel = new JLabel("Workers");
+        maxDepthLabel = new JLabel("Maximum depth");
+        timeLimitLabel = new JLabel("Time limit");
+        timeElapsedLabel = new JLabel("Elapsed time:");
+        parsedLabel = new JLabel("Parsed pages:");
+        exportLabel = new JLabel("Export");
+        workField = new JTextField("5");
+        depthField = new JTextField("1");
+        depthCBox = new JCheckBox("Enabled",true);
+        timeLimitField = new JTextField("120");
+        timeCBox = new JCheckBox("Enabled");
+        currentTimeLabel = new JLabel("0");
+        parsedPagesLabel = new JLabel("0");
+
+        mainPanel.setLayout(gridBagLayout);
+        addMainPanel(startLabel, 0, 1, 0);
+        addMainPanel(textFieldURL, 0, 1, 1);
+        addMainPanel(buttonRun, 0, 1, 0);
+        addMainPanel(workLabel, 1, 1, 0);
+        addMainPanel(workField, 1, GridBagConstraints.REMAINDER, 1);
+        addMainPanel(maxDepthLabel, 2, 1, 0);
+        addMainPanel(depthField, 2, 1, 1);
+        addMainPanel(depthCBox, 2, 1, 0);
+        addMainPanel(timeLimitLabel, 3, 1, 0);
+        addMainPanel(timeLimitField, 3, 1, 1);
+        addMainPanel(timeCBox, 3, 1, 0);
+        addMainPanel(timeElapsedLabel, 4, 1, 0);
+        addMainPanel(currentTimeLabel, 4, 1, 0);
+        addMainPanel(parsedLabel, 5, 1, 0);
+        addMainPanel(parsedPagesLabel, 5, 1, 0);
+        addMainPanel(exportLabel, 6, 1, 0);
+        addMainPanel(textFieldExport, 6, 1, 1);
+        addMainPanel(exportButton, 6, 1, 0);
+
+        textFieldURL.setName("UrlTextField");
+        buttonRun.setName("RunButton");
+        depthField.setName("DepthTextField");
+        depthCBox.setName("DepthCheckBox");
+        parsedPagesLabel.setName("ParsedLabel");
+        textFieldExport.setName("ExportUrlTextField");
+        exportButton.setName("ExportButton");
+        table.setEnabled(false);
+
+        buttonRun.addItemListener(e -> {
+            if (buttonRun.isSelected()){
+                crawl();
+            }
+        });
+        exportButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                export();
+            }
+        });
+    }
+    private void crawl(){
+        buttonRun.setText("Stop");
+        parsedPagesLabel.setText("0");
+        model = new DefaultTableModel(new String[0][0], new String[]{"Url", "Titles"});
+        table.setModel(model);
+        Thread crawl = new Thread(() -> downloadSource(textFieldURL.getText(),Integer.parseInt(depthField.getText())));
+        crawl.start();
+        try {
+            crawl.join();
+        } catch (InterruptedException interruptedException) {
+            interruptedException.printStackTrace();
+        }
+        table.setModel(model);
+        buttonRun.setSelected(false);
+        buttonRun.setText("Start");
+        revalidate();
+        repaint();
     }
 }
