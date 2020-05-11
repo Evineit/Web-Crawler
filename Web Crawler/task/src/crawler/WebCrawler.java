@@ -14,35 +14,87 @@ import java.util.regex.Pattern;
 
 
 public class WebCrawler extends JFrame {
+    JLabel startLabel;
+    JLabel workLabel;
+    JLabel maxDepthLabel;
+    JLabel timeLimitLabel;
+    JLabel timeElapsedLabel;
+    JLabel parsedLabel;
+    JLabel exportLabel;
+    JTextField textFieldURL;
+    JButton buttonDownload;
+    JTextField workField;
+    JTextField depthField;
+    JCheckBox depthCBox;
+    JTextField timeLimitField;
+    JCheckBox timeCBox;
+    JLabel currentTimeLabel;
+    JLabel parsedPagesLabel;
+    JTextField textFieldExport;
+    JButton exportButton = new JButton("Export");
+
     String LINE_SEPARATOR = System.getProperty("line.separator");
     JPanel mainPanel = new JPanel();
+    GridBagLayout gridBagLayout = new GridBagLayout();
+    GridBagConstraints constraints = new GridBagConstraints();
     JPanel topPanel = new JPanel();
     JPanel urlPanel = new JPanel();
     JPanel iTopPanel = new JPanel();
     JPanel exportPanel = new JPanel();
-    JButton exportButton = new JButton("Export");
     JTextArea textArea = new JTextArea();
-    JTextField textFieldExport;
-    JTextField textFieldURL;
-    JButton buttonDownload;
     JLabel labelTitle;
     DefaultTableModel model = new DefaultTableModel(new String[0][0],new String[]{"Url","Titles"});
     JTable table = new JTable(model);
     public WebCrawler() {
         super("Web crawler");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(300, 300);
+        setSize(600, 260);
 //        setLayout(null);
-//        setContentPane(mainPanel);
+        setContentPane(mainPanel);
         buttonDownload = new JButton("Get text!");
         textFieldURL = new JTextField();
         textFieldExport = new JTextField();
         labelTitle = new JLabel("Title:");
 //        table.addColumn(new TableColumn());
 //        table.
+        startLabel = new JLabel("Start Url");
+        workLabel = new JLabel("Workers");
+        maxDepthLabel = new JLabel("Maximum depth");
+        timeLimitLabel = new JLabel("Time limit");
+        timeElapsedLabel = new JLabel("Elapsed time:");
+        parsedLabel = new JLabel("Parsed pages:");
+        exportLabel = new JLabel("Export");
+        workField = new JTextField();
+        depthField = new JTextField();
+        depthCBox = new JCheckBox("Enabled");
+        timeLimitField = new JTextField();
+        timeCBox = new JCheckBox("Enabled");
+        currentTimeLabel = new JLabel("0:00");
+        parsedPagesLabel = new JLabel("0");
+
+        mainPanel.setLayout(gridBagLayout);
+        addMainPanel(startLabel,0,1,0);
+        addMainPanel(textFieldURL,0,1,1);
+        addMainPanel(buttonDownload,0,1,0);
+        addMainPanel(workLabel,1,1,0);
+        addMainPanel(workField,1,GridBagConstraints.REMAINDER,1);
+        addMainPanel(maxDepthLabel,2,1,0);
+        addMainPanel(depthField,2,1,1);
+        addMainPanel(depthCBox,2,1,0);
+        addMainPanel(timeLimitLabel,3,1,0);
+        addMainPanel(timeLimitField,3,1,1);
+        addMainPanel(timeCBox,3,1,0);
+        addMainPanel(timeElapsedLabel,4,1,0);
+        addMainPanel(currentTimeLabel,4,1,0);
+        addMainPanel(parsedLabel,5,1,0);
+        addMainPanel(parsedPagesLabel,5,1,0);
+        addMainPanel(exportLabel,6,1,0);
+        addMainPanel(textFieldExport,6,1,1);
+        addMainPanel(exportButton,6,1,0);
+//        addMainPanel();
+
         JScrollPane scrollPane =  new JScrollPane(table);
         topPanel.setLayout(new BoxLayout(topPanel,BoxLayout.Y_AXIS));
-        mainPanel.setLayout(new BorderLayout());
         iTopPanel.setLayout(new BoxLayout(iTopPanel,BoxLayout.X_AXIS));
         urlPanel.setLayout(new BoxLayout(urlPanel,BoxLayout.X_AXIS));
         exportPanel.setLayout(new BoxLayout(exportPanel,BoxLayout.Y_AXIS));
@@ -55,16 +107,16 @@ public class WebCrawler extends JFrame {
         textFieldExport.setName("ExportUrlTextField");
         exportButton.setName("ExportButton");
         table.setEnabled(false);
-        topPanel.add(urlPanel);
-        topPanel.add(iTopPanel);
-        urlPanel.add(textFieldURL);
-        urlPanel.add(buttonDownload);
-        iTopPanel.add(labelTitle);
-        exportPanel.add(textFieldExport);
-        exportPanel.add(exportButton);
-        add(topPanel,BorderLayout.NORTH);
-        add(scrollPane,BorderLayout.CENTER);
-        add(exportPanel,BorderLayout.SOUTH);
+//        topPanel.add(urlPanel);
+//        topPanel.add(iTopPanel);
+////        urlPanel.add(textFieldURL);
+//        urlPanel.add(buttonDownload);
+//        iTopPanel.add(labelTitle);
+//        exportPanel.add(textFieldExport);
+//        exportPanel.add(exportButton);
+////        add(topPanel,BorderLayout.NORTH);
+//        add(scrollPane,BorderLayout.CENTER);
+//        add(exportPanel,BorderLayout.SOUTH);
         buttonDownload.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -82,6 +134,18 @@ public class WebCrawler extends JFrame {
         });
         setVisible(true);
 
+    }
+//    void addMainPanel (JComponent component,int gridy,int weightx){
+//        addMainPanel(component,gridy,1,0);
+//    }
+    void addMainPanel (JComponent component,int gridy,int width,int weightx){
+        constraints.insets = new Insets(5,5,5,5);
+        constraints.weightx=weightx;
+        constraints.weighty=1;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.gridwidth = width;
+        constraints.gridy = gridy;
+        mainPanel.add(component,constraints);
     }
 
     private void export() {
