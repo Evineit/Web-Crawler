@@ -1,16 +1,20 @@
 package crawler;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,8 +43,10 @@ public class WebCrawler extends JFrame {
     JPanel mainPanel = new JPanel();
     GridBagLayout gridBagLayout = new GridBagLayout();
     GridBagConstraints constraints = new GridBagConstraints();
-    DefaultTableModel model = new DefaultTableModel(new String[0][0], new String[]{"Url", "Titles"});
-    JTable table = new JTable(model);
+
+    ThreadPoolExecutor executor;
+    private ConcurrentLinkedQueue<Page> websites;
+    public static final Pattern PATTERN_LINK = Pattern.compile("<a href=\"(.*?)\">");
 
     public WebCrawler() {
         super("Web crawler");
@@ -65,10 +71,11 @@ public class WebCrawler extends JFrame {
 
     private void export() {
         File file = new File(textFieldExport.getText());
+        List<Page> websites = new ArrayList<>(this.websites);
         try (PrintWriter printWriter = new PrintWriter(file)) {
-            for (int i = 0; i < table.getRowCount(); i++) {
-                printWriter.println(table.getValueAt(i, 0));
-                printWriter.println(table.getValueAt(i, 1));
+            for (Page website : websites) {
+                printWriter.println(website.url);
+                printWriter.println(website.title);
             }
         } catch (IOException e) {
             System.out.printf("An exception occurs %s", e.getMessage());
@@ -76,43 +83,39 @@ public class WebCrawler extends JFrame {
 
     }
 
-    void downloadSource(String url,int depth) {
-//        Map<String, String> hashMap = new HashMap<>();
+    private URL getUrl(String link) {
         try {
-            URL url2 = new URL(url);
-            url2.openConnection().setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0");
-            InputStream inputStream = url2.openStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            final StringBuilder stringBuilder = new StringBuilder();
-            String nextLine;
-            while ((nextLine = reader.readLine()) != null) {
-                stringBuilder.append(nextLine);
-                stringBuilder.append(LINE_SEPARATOR);
+            URL url = new URL(link);
+            URLConnection urlConnection = url.openConnection();
+            urlConnection.setRequestProperty(
+                    "User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0");
+            String contentType = urlConnection.getContentType();
+            if ("text/html".equals(contentType)) {
+                return url;
             }
-            Pattern pattern = Pattern.compile("<title>(.*)</title>");
-            Matcher matcherTitle = pattern.matcher(stringBuilder.toString());
-            String titleGroup = (matcherTitle.find()) ? matcherTitle.group(1) : null;
-            boolean exist=false;
-            for (int i = 0; i < table.getRowCount(); i++) {
-                if (table.getValueAt(i,0).equals(url)){
-                    exist=true;
-                }
-            }
-            if (exist){
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    void processPage(Page parentPage) {
+        try {
+            URL sourceURL = parentPage.url;
+            final StringBuilder html = getHtml(sourceURL);
+            if (websites.contains(parentPage)) {
                 return;
             }
-            model.addRow(new String[]{url, titleGroup});
+            websites.add(parentPage);
             parsedPagesLabel.setText(String.valueOf(Integer.parseInt(parsedPagesLabel.getText()) + 1));
-//            Pattern patternLink = Pattern.compile("<a id=\".*\".*href=\"(.*)\".{0,100}title=\"(.*?)\" .*>");
-            Pattern patternLink = Pattern.compile("<a href=\"(.*?)\">");
-            Matcher matcherLinks = patternLink.matcher(stringBuilder.toString());
+            Matcher matcherLinks = PATTERN_LINK.matcher(html.toString());
             while (matcherLinks.find()) {
                 String link = matcherLinks.group(1);
-                URL url1 = new URL(url2.getProtocol() + "://" + url2.getHost() + ":" + url2.getPort() + "/" + link);
+                URL childURL = getUrl(sourceURL.getProtocol() + "://" + sourceURL.getHost() + ":" + sourceURL.getPort() + "/" + link);
                 try {
-                    if (url1.openConnection().getContentType() != null && url1.openConnection().getContentType().equals("text/html") && (depth!=0 || !depthCBox.isSelected())) {
-                        downloadSource(url1.toString(),depth-1);
-
+                    if (childURL!=null && (parentPage.depth != 0 || !depthCBox.isSelected())) {
+                        executeNewTask(new Page(childURL,getTitle(getHtml(childURL)),parentPage.depth-1));
                     }
                 } catch (ConnectException e) {
                     e.printStackTrace();
@@ -121,9 +124,26 @@ public class WebCrawler extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
+
+    private StringBuilder getHtml(URL sourceURL) throws IOException {
+            InputStream inputStream = sourceURL.openStream();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            final StringBuilder stringBuilder = new StringBuilder();
+            String nextLine;
+            while ((nextLine = reader.readLine()) != null) {
+                stringBuilder.append(nextLine);
+                stringBuilder.append(LINE_SEPARATOR);
+            }
+            return stringBuilder;
+    }
+
+    private String getTitle(StringBuilder stringBuilder) {
+        Pattern pattern = Pattern.compile("<title>(.*)</title>");
+        Matcher matcherTitle = pattern.matcher(stringBuilder.toString());
+        return (matcherTitle.find()) ? matcherTitle.group(1) : "NO TITLE FOUND";
+    }
+
     private void initComponents(){
         buttonRun = new JToggleButton("Run");
         textFieldURL = new JTextField();
@@ -170,16 +190,20 @@ public class WebCrawler extends JFrame {
         parsedPagesLabel.setName("ParsedLabel");
         textFieldExport.setName("ExportUrlTextField");
         exportButton.setName("ExportButton");
-        table.setEnabled(false);
 
         buttonRun.addItemListener(e -> {
+            int workers = Integer.parseInt(workField.getText());
             if (buttonRun.isSelected()){
+                websites = new ConcurrentLinkedQueue<>();
+                executor = new ThreadPoolExecutor(workers, workers,
+                        0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
                 crawl();
             }
         });
         exportButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                stop();
                 export();
             }
         });
@@ -187,19 +211,39 @@ public class WebCrawler extends JFrame {
     private void crawl(){
         buttonRun.setText("Stop");
         parsedPagesLabel.setText("0");
-        model = new DefaultTableModel(new String[0][0], new String[]{"Url", "Titles"});
-        table.setModel(model);
-        Thread crawl = new Thread(() -> downloadSource(textFieldURL.getText(),Integer.parseInt(depthField.getText())));
+        Thread crawl = new Thread(() -> {
+            URL url = getUrl(textFieldURL.getText());
+            try {
+                if (url != null) {
+                    processPage(new Page(url,getTitle(getHtml(url)),Integer.parseInt(depthField.getText())));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
         crawl.start();
         try {
             crawl.join();
         } catch (InterruptedException interruptedException) {
             interruptedException.printStackTrace();
         }
-        table.setModel(model);
+//        stop();
         buttonRun.setSelected(false);
         buttonRun.setText("Start");
         revalidate();
         repaint();
+    }
+
+    private void stop() {
+        executor.shutdown();
+        try {
+            executor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeNewTask(Page taskPage){
+        executor.execute(() -> processPage(taskPage));
     }
 }
