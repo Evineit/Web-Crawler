@@ -39,7 +39,7 @@ public class WebCrawler extends JFrame {
     JTextField textFieldExport;
     JButton exportButton = new JButton("Export");
 
-    String LINE_SEPARATOR = System.getProperty("line.separator");
+    final String LINE_SEPARATOR = System.getProperty("line.separator");
     JPanel mainPanel = new JPanel();
     GridBagLayout gridBagLayout = new GridBagLayout();
     GridBagConstraints constraints = new GridBagConstraints();
@@ -114,8 +114,8 @@ public class WebCrawler extends JFrame {
                 String link = matcherLinks.group(1);
                 URL childURL = getUrl(sourceURL.getProtocol() + "://" + sourceURL.getHost() + ":" + sourceURL.getPort() + "/" + link);
                 try {
-                    if (childURL!=null && (parentPage.depth != 0 || !depthCBox.isSelected())) {
-                        executeNewTask(new Page(childURL,getTitle(getHtml(childURL)),parentPage.depth-1));
+                    if (childURL != null && (parentPage.depth != 0 || !depthCBox.isSelected())) {
+                        executeNewTask(new Page(childURL, getTitle(getHtml(childURL)), parentPage.depth - 1));
                     }
                 } catch (ConnectException e) {
                     e.printStackTrace();
@@ -127,15 +127,15 @@ public class WebCrawler extends JFrame {
     }
 
     private StringBuilder getHtml(URL sourceURL) throws IOException {
-            InputStream inputStream = sourceURL.openStream();
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            final StringBuilder stringBuilder = new StringBuilder();
-            String nextLine;
-            while ((nextLine = reader.readLine()) != null) {
-                stringBuilder.append(nextLine);
-                stringBuilder.append(LINE_SEPARATOR);
-            }
-            return stringBuilder;
+        InputStream inputStream = sourceURL.openStream();
+        final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+        final StringBuilder stringBuilder = new StringBuilder();
+        String nextLine;
+        while ((nextLine = reader.readLine()) != null) {
+            stringBuilder.append(nextLine);
+            stringBuilder.append(LINE_SEPARATOR);
+        }
+        return stringBuilder;
     }
 
     private String getTitle(StringBuilder stringBuilder) {
@@ -144,7 +144,7 @@ public class WebCrawler extends JFrame {
         return (matcherTitle.find()) ? matcherTitle.group(1) : "NO TITLE FOUND";
     }
 
-    private void initComponents(){
+    private void initComponents() {
         buttonRun = new JToggleButton("Run");
         textFieldURL = new JTextField();
         textFieldExport = new JTextField();
@@ -157,7 +157,7 @@ public class WebCrawler extends JFrame {
         exportLabel = new JLabel("Export");
         workField = new JTextField("5");
         depthField = new JTextField("1");
-        depthCBox = new JCheckBox("Enabled",true);
+        depthCBox = new JCheckBox("Enabled", true);
         timeLimitField = new JTextField("120");
         timeCBox = new JCheckBox("Enabled");
         currentTimeLabel = new JLabel("0");
@@ -193,7 +193,7 @@ public class WebCrawler extends JFrame {
 
         buttonRun.addItemListener(e -> {
             int workers = Integer.parseInt(workField.getText());
-            if (buttonRun.isSelected()){
+            if (buttonRun.isSelected()) {
                 websites = new ConcurrentLinkedQueue<>();
                 executor = new ThreadPoolExecutor(workers, workers,
                         0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -208,14 +208,15 @@ public class WebCrawler extends JFrame {
             }
         });
     }
-    private void crawl(){
+
+    private void crawl() {
         buttonRun.setText("Stop");
         parsedPagesLabel.setText("0");
         Thread crawl = new Thread(() -> {
             URL url = getUrl(textFieldURL.getText());
             try {
                 if (url != null) {
-                    processPage(new Page(url,getTitle(getHtml(url)),Integer.parseInt(depthField.getText())));
+                    processPage(new Page(url, getTitle(getHtml(url)), Integer.parseInt(depthField.getText())));
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -243,7 +244,7 @@ public class WebCrawler extends JFrame {
         }
     }
 
-    private void executeNewTask(Page taskPage){
+    private void executeNewTask(Page taskPage) {
         executor.execute(() -> processPage(taskPage));
     }
 }
