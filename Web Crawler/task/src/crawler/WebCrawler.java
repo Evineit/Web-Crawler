@@ -107,8 +107,7 @@ public class WebCrawler extends JFrame {
             if (websites.contains(parentPage)) {
                 return;
             }
-            websites.add(parentPage);
-            parsedPagesLabel.setText(String.valueOf(Integer.parseInt(parsedPagesLabel.getText()) + 1));
+            addPage(parentPage);
             Matcher matcherLinks = PATTERN_LINK.matcher(html.toString());
             while (matcherLinks.find()) {
                 String link = matcherLinks.group(1);
@@ -124,6 +123,11 @@ public class WebCrawler extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private synchronized void addPage(Page parentPage) {
+        websites.add(parentPage);
+        parsedPagesLabel.setText(String.valueOf(Integer.parseInt(parsedPagesLabel.getText()) + 1));
     }
 
     private StringBuilder getHtml(URL sourceURL) throws IOException {
